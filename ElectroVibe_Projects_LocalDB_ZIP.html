@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ElectroVibe - פרויקטים</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#090d16">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- JSZip library for local ZIP Backup Export/Import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Assistant', 'sans-serif'], }, colors: { navy: { 800: '#0f172a', 900: '#090d16', 950: '#050810' }, amber: { 500: '#f59e0b', 600: '#d97706', } } } }
+        }
+    </script>
+    <style>
+        * { touch-action: manipulation; -webkit-tap-highlight-color: rgba(245, 158, 11, 0.15); }
+        body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; user-select: none; -webkit-user-select: none; overscroll-behavior-y: none; direction: rtl; text-align: right; }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .touch-active:active { transform: scale(0.98); opacity: 0.9; } .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* Grid templates for consistent headers and rows */
+        .reports-grid { display: grid; grid-template-columns: 130px 1fr 120px 90px 110px 90px 140px; gap: 8px; align-items: center; direction: rtl; text-align: right; }
+        .plans-grid { display: grid; grid-template-columns: 1fr 80px 80px 95px 120px 140px; gap: 8px; align-items: center; direction: rtl; text-align: right; }
+        .permits-grid { display: grid; grid-template-columns: 1fr 80px 80px 95px 140px; gap: 8px; align-items: center; direction: rtl; text-align: right; }
+        .extra-grid { display: grid; grid-template-columns: 1fr 80px 80px 95px 140px; gap: 8px; align-items: center; direction: rtl; text-align: right; }
+
+        @media(max-width: 768px) {
+            .reports-grid { grid-template-columns: 90px 1fr 90px 75px 80px 70px 120px; font-size: 11px; }
+            .plans-grid { grid-template-columns: 1fr 60px 65px 75px 90px 120px; font-size: 11px; }
+            .permits-grid { grid-template-columns: 1fr 60px 65px 75px 120px; font-size: 11px; }
+            .extra-grid { grid-template-columns: 1fr 60px 65px 75px 120px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden text-slate-800">
+
+    <header class="bg-navy-900 text-white flex items-center justify-between px-4 py-3 shadow-lg border-b border-amber-500/30 z-30 flex-shrink-0 pt-safe">
+        <div class="flex items-center space-x-3 space-x-reverse">
+            <button id="sidebarToggleBtn" onclick="openSidebar()" class="p-2 rounded-xl bg-slate-800 active:bg-slate-700 text-amber-400 transition flex items-center justify-center w-11 h-11 border border-slate-700 cursor-pointer touch-active">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-wide flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> ElectroVibe <span class="text-xs bg-amber-500 text-slate-950 font-bold px-1.5 py-0.5 rounded">סוג 3</span></h1>
+                <p class="text-[11px] text-slate-400">אשקלון | ח.פ 201385564</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
+            
+            <!-- Breadcrumbs Header -->
+            <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between gap-2">
+                <div id="breadcrumbsContainer" class="flex items-center gap-2 text-sm font-medium overflow-x-auto py-1 whitespace-nowrap scrollbar-hide"></div>
+                <button onclick="goBackHistory()" class="bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2 rounded-xl transition border border-slate-300 cursor-pointer flex-shrink-0 touch-active"><i class="fa-solid fa-arrow-right ml-1"></i> חזור</button>
+            </div>
+
+            <!-- LEVEL 1: PROJECTS LIST VIEW -->
+            <div id="projectsView" class="space-y-4 hidden">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-folder-closed text-3xl text-amber-500"></i>
+                            <div>
+                                <h2 class="font-bold text-slate-900 text-base md:text-lg flex items-center gap-2">רשימת פרויקטים <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold" id="projectsCount">0 פרויקטים</span></h2>
+                                <p class="text-xs text-slate-500">בחר פרויקט לצפייה בקטגוריות, בדוחות, במסמכים ובחשבוניות</p>
+                            </div>
+                        </div>
+                        <button onclick="openNewProjectModal()" class="bg-navy-900 active:bg-slate-800 text-white font-semibold text-xs md:text-sm px-4 py-2.5 rounded-xl transition flex items-center gap-2 shadow border border-slate-700 cursor-pointer touch-active"><span class="bg-amber-500 text-slate-950 rounded-md w-5 h-5 flex items-center justify-center text-xs font-bold">+</span><span>פרויקט חדש</span></button>
+                    </div>
+                    <div id="projectsGrid" class="p-4 flex flex-col space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- LEVEL 2: 6 CATEGORIES DIRECTORY VIEW -->
+            <div id="projectDetailView" class="space-y-4 hidden">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="bg-navy-900 text-white p-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3"><i class="fa-solid fa-folder-tree text-3xl text-amber-400"></i><div><h3 id="currentProjectTitle" class="font-bold text-base md:text-lg">שם הפרויקט</h3><p class="text-xs text-slate-300">בחר קטגוריה לצפייה וניהול המסמכים והחשבוניות</p></div></div>
+                        <button onclick="navigateToState({view: 'projects'})" class="bg-slate-800 active:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-xl transition border border-slate-700 cursor-pointer touch-active"><i class="fa-solid fa-arrow-right ml-1"></i> חזרה לפרויקטים</button>
+                    </div>
+
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div onclick="navigateToState({view: 'folder', projId: activeProjectId, folderType: 'reports'})" class="p-4 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 rounded-2xl cursor-pointer transition flex items-center justify-between shadow-sm touch-active">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-file-contract text-3xl text-amber-500"></i><div><div class="font-bold text-base text-slate-900">דוחות בדיקה</div><div class="text-xs text-slate-500" id="reportsCountLabel">0 דוחות</div></div></div><i class="fa-solid fa-chevron-left text-sm text-slate-400"></i>
+                        </div>
+                        <div onclick="navigateToState({view: 'folder', projId: activeProjectId, folderType: 'plans'})" class="p-4 bg-slate-50 hover:bg-blue-50/50 border border-slate-200 rounded-2xl cursor-pointer transition flex items-center justify-between shadow-sm touch-active">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-diagram-project text-3xl text-blue-600"></i><div><div class="font-bold text-base text-slate-900">תכניות חשמל</div><div class="text-xs text-slate-500" id="plansCountLabel">0 תכניות</div></div></div><i class="fa-solid fa-chevron-left text-sm text-slate-400"></i>
+                        </div>
+                        <div onclick="navigateToState({view: 'folder', projId: activeProjectId, folderType: 'permits'})" class="p-4 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200 rounded-2xl cursor-pointer transition flex items-center justify-between shadow-sm touch-active">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-file-shield text-3xl text-emerald-600"></i><div><div class="font-bold text-base text-slate-900">היתרים</div><div class="text-xs text-slate-500" id="permitsCountLabel">0 קבצים</div></div></div><i class="fa-solid fa-chevron-left text-sm text-slate-400"></i>
+                        </div>
+                        <div onclick="navigateToState({view: 'folder', projId: activeProjectId, folderType: 'extra'})" class="p-4 bg-slate-50 hover:bg-purple-50/50 border border-slate-200 rounded-2xl cursor-pointer transition flex items-center justify-between shadow-sm touch-active">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-folder-plus text-3xl text-purple-600"></i><div><div class="font-bold text-base text-slate-900">קבצים נוספים</div><div class="text-xs text-slate-500" id="extraCountLabel">0 קבצים</div></div></div><i class="fa-solid fa-chevron-left text-sm text-slate-400"></i>
+                        </div>
+                        <div onclick="navigateToState({view: 'folder', projId: activeProjectId, folderType: 'invoices'})" class="p-4 bg-slate-50 hover:bg-amber-100/40 border border-slate-200 rounded-2xl cursor-pointer transition flex items-center justify-between shadow-sm touch-active">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-file-invoice-dollar text-3xl text-amber-600"></i><div><div class="font-bold text-base text-slate-900">חשבוניות מס</div><div class="text-xs text-slate-500" id="invoicesCountLabel">מסמך חשבונית</div></div></div><i class="fa-solid fa-chevron-left text-sm text-slate-400"></i>
+                        </div>
+                        <div onclick="navigateToState({view: 'folder', projId: activeProjectId, folderType: 'receipts'})" class="p-4 bg-slate-50 hover:bg-teal-50/50 border border-slate-200 rounded-2xl cursor-pointer transition flex items-center justify-between shadow-sm touch-active">
+                            <div class="flex items-center gap-3"><i class="fa-solid fa-file-invoice text-3xl text-teal-600"></i><div><div class="font-bold text-base text-slate-900">קבלות</div><div class="text-xs text-slate-500" id="receiptsCountLabel">מסמך קבלה</div></div></div><i class="fa-solid fa-chevron-left text-sm text-slate-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LEVEL 3: INNER FOLDER DOCUMENTS VIEW -->
+            <div id="folderContentView" class="space-y-4 hidden">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="bg-navy-900 text-white p-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3"><i id="activeFolderIcon" class="fa-solid fa-folder-open text-3xl text-amber-400"></i><div><h3 id="activeFolderTitle" class="font-bold text-base md:text-lg">שם התיקייה</h3><p class="text-xs text-slate-300">ניהול קבצים ותוכן בתיקייה הפעילה</p></div></div>
+                        <button onclick="navigateToState({view: 'projectDetail', projId: activeProjectId})" class="bg-slate-800 active:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-xl transition border border-slate-700 cursor-pointer touch-active"><i class="fa-solid fa-arrow-right ml-1"></i> חזרה לפרויקט</button>
+                    </div>
+
+                    <div class="p-4">
+                        <!-- 1. REPORTS CONTENT -->
+                        <div id="paneReports" class="space-y-4 hidden">
+                            <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="font-bold text-slate-800 text-sm">רשימת דוחות הבדיקה</span>
+                                <div class="flex items-center gap-2">
+                                    <label class="bg-slate-800 active:bg-slate-700 text-white text-xs px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 touch-active" title="העלאת קובץ מתוך המחשב/טלפון">
+                                        <i class="fa-solid fa-upload text-amber-400"></i><span>העלאה</span>
+                                        <input type="file" onchange="uploadFileToActiveFolder(event, 'reports')" class="hidden">
+                                    </label>
+                                    <button type="button" onclick="triggerCamera('reports')" class="bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs px-3 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 touch-active" title="צילום במצלמה">
+                                        <i class="fa-solid fa-camera"></i><span>צלם</span>
+                                    </button>
+                                    <button onclick="openNewReportSelectorModal()" class="bg-amber-500 active:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1 cursor-pointer touch-active">
+                                        <i class="fa-solid fa-plus"></i> דוח חדש
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- REPORTS HEADER -->
+                            <div dir="rtl" style="direction: rtl;" class="bg-slate-100 p-3 rounded-xl border border-slate-200 reports-grid text-xs text-slate-600 font-bold">
+                                <div class="text-right">מס' / קובץ</div>
+                                <div class="text-right">כותרת הדוח / המסמך</div>
+                                <div class="text-right">שיוך לפרויקט</div>
+                                <div class="text-center">תאריך</div>
+                                <div class="text-center">סטטוס מסמך</div>
+                                <div class="text-center">מצב תשלום</div>
+                                <div class="text-center">פעולות (PDF / WhatsApp / Mail)</div>
+                            </div>
+
+                            <div id="reportsFolderGrid" class="flex flex-col space-y-2.5"></div>
+                        </div>
+
+                        <!-- 2. PLANS CONTENT -->
+                        <div id="panePlans" class="space-y-4 hidden">
+                            <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="font-bold text-slate-800 text-sm">תכניות חשמל</span>
+                                <div class="flex items-center gap-2">
+                                    <label class="bg-blue-600 active:bg-blue-700 text-white text-xs px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 font-bold shadow-sm touch-active" title="העלאה מהמחשב/טלפון">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i><span>העלאת תכנית</span>
+                                        <input type="file" onchange="uploadFileToActiveFolder(event, 'plans')" class="hidden">
+                                    </label>
+                                    <button type="button" onclick="triggerCamera('plans')" class="bg-blue-700 active:bg-blue-800 text-white text-xs px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 font-bold shadow-sm touch-active" title="צלם תכנית">
+                                        <i class="fa-solid fa-camera"></i><span>צלם</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- PLANS HEADER BAR -->
+                            <div dir="rtl" style="direction: rtl;" class="bg-slate-100 p-3 rounded-xl border border-slate-200 plans-grid text-xs text-slate-600 font-bold">
+                                <div class="text-right">שם הקובץ ותכנית</div>
+                                <div class="text-center">פורמט</div>
+                                <div class="text-center">גודל</div>
+                                <div class="text-center">תאריך העלאה</div>
+                                <div class="text-right">מזהה / לוח</div>
+                                <div class="text-center">פעולות (PDF / WhatsApp / Mail)</div>
+                            </div>
+
+                            <div id="plansFolderGrid" class="flex flex-col space-y-2.5"></div>
+                        </div>
+
+                        <!-- 3. PERMITS CONTENT -->
+                        <div id="panePermits" class="space-y-4 hidden">
+                            <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="font-bold text-slate-800 text-sm">תיקיית היתרים ואישורים</span>
+                                <div class="flex items-center gap-2">
+                                    <label class="bg-emerald-600 active:bg-emerald-700 text-white text-xs px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 font-bold shadow-sm touch-active" title="העלאה מהמחשב/טלפון">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i><span>העלאת היתר</span>
+                                        <input type="file" onchange="uploadFileToActiveFolder(event, 'permits')" class="hidden">
+                                    </label>
+                                    <button type="button" onclick="triggerCamera('permits')" class="bg-emerald-700 active:bg-emerald-800 text-white text-xs px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 font-bold shadow-sm touch-active" title="צלם היתר">
+                                        <i class="fa-solid fa-camera"></i><span>צלם</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- PERMITS HEADER BAR -->
+                            <div dir="rtl" style="direction: rtl;" class="bg-slate-100 p-3 rounded-xl border border-slate-200 permits-grid text-xs text-slate-600 font-bold">
+                                <div class="text-right">שם הקובץ</div>
+                                <div class="text-center">פורמט</div>
+                                <div class="text-center">גודל</div>
+                                <div class="text-center">תאריך העלאה</div>
+                                <div class="text-center">פעולות (PDF / WhatsApp / Mail)</div>
+                            </div>
+
+                            <div id="permitsList" class="flex flex-col space-y-2.5"></div>
+                        </div>
+
+                        <!-- 4. EXTRA FILES CONTENT -->
+                        <div id="paneExtra" class="space-y-4 hidden">
+                            <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="font-bold text-slate-800 text-sm">תיקיית קבצים נוספים</span>
+                                <div class="flex items-center gap-2">
+                                    <label class="bg-purple-600 active:bg-purple-700 text-white text-xs px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 font-bold shadow-sm touch-active" title="העלאה מהמחשב/טלפון">
+                                        <i class="fa-solid fa-upload"></i><span>העלאת קובץ</span>
+                                        <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="uploadFileToActiveFolder(event, 'extra')" class="hidden">
+                                    </label>
+                                    <button type="button" onclick="triggerCamera('extra')" class="bg-purple-700 active:bg-purple-800 text-white text-xs px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 font-bold shadow-sm touch-active" title="צלם קובץ">
+                                        <i class="fa-solid fa-camera"></i><span>צלם</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- EXTRA FILES HEADER BAR -->
+                            <div dir="rtl" style="direction: rtl;" class="bg-slate-100 p-3 rounded-xl border border-slate-200 extra-grid text-xs text-slate-600 font-bold">
+                                <div class="text-right">שם הקובץ</div>
+                                <div class="text-center">פורמט</div>
+                                <div class="text-center">גודל</div>
+                                <div class="text-center">תאריך העלאה</div>
+                                <div class="text-center">פעולות (PDF / WhatsApp / Mail)</div>
+                            </div>
+
+                            <div id="extraFilesList" class="flex flex-col space-y-2.5"></div>
+                        </div>
+
+                        <!-- 5. INVOICES CONTENT -->
+                        <div id="paneInvoices" class="space-y-4 hidden">
+                            <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="font-bold text-slate-800 text-sm">חשבוניות מס לפרויקט</span>
+                                <button onclick="openProjectDocModal('invoice')" class="bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer touch-active">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i> צפה / הפק חשבונית מס
+                                </button>
+                            </div>
+                            
+                            <div dir="rtl" style="direction: rtl;" class="bg-slate-100 p-3 rounded-xl border border-slate-200 permits-grid text-xs text-slate-600 font-bold">
+                                <div class="text-right">תיאור מסמך חשבונית</div>
+                                <div class="text-center">פורמט</div>
+                                <div class="text-center">שורות דוחות</div>
+                                <div class="text-center">תאריך</div>
+                                <div class="text-center">פעולות (צפה / ערוך / הדפס)</div>
+                            </div>
+
+                            <div id="invoicesFolderGrid" class="flex flex-col space-y-2.5"></div>
+                        </div>
+
+                        <!-- 6. RECEIPTS CONTENT -->
+                        <div id="paneReceipts" class="space-y-4 hidden">
+                            <div class="flex flex-wrap justify-between items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span class="font-bold text-slate-800 text-sm">קבלות לפרויקט</span>
+                                <button onclick="openProjectDocModal('receipt')" class="bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer touch-active">
+                                    <i class="fa-solid fa-file-invoice"></i> צפה / הפק קבלה
+                                </button>
+                            </div>
+                            
+                            <div dir="rtl" style="direction: rtl;" class="bg-slate-100 p-3 rounded-xl border border-slate-200 permits-grid text-xs text-slate-600 font-bold">
+                                <div class="text-right">תיאור מסמך קבלה</div>
+                                <div class="text-center">פורמט</div>
+                                <div class="text-center">שורות דוחות</div>
+                                <div class="text-center">תאריך</div>
+                                <div class="text-center">פעולות (צפה / ערוך / הדפס)</div>
+                            </div>
+
+                            <div id="receiptsFolderGrid" class="flex flex-col space-y-2.5"></div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </main>
+        
+        <!-- Sidebar Drawer -->
+        <div id="sidebarOverlay" onclick="closeSidebar()" class="fixed inset-0 bg-navy-950/60 backdrop-blur-sm z-30 hidden transition-opacity"></div>
+        <aside id="sidebarDrawer" class="fixed inset-y-0 right-0 w-80 md:w-96 bg-navy-900 text-white z-40 transform translate-x-full transition-transform duration-300 ease-in-out shadow-2xl flex flex-col border-l border-slate-800">
+            <div class="p-4 bg-navy-950 border-b border-slate-800 flex justify-between items-center">
+                <div class="flex items-center gap-2"><i class="fa-solid fa-toolbox text-amber-400 text-lg"></i><h3 class="font-bold text-base text-white">תפריט</h3></div>
+                <button onclick="closeSidebar()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+                <button onclick="closeSidebar(); navigateToState({view: 'projects'});" class="w-full bg-slate-800 p-4 rounded-xl border border-amber-500/40 flex items-center justify-between text-amber-400 font-bold transition"><div class="flex items-center gap-3"><i class="fa-solid fa-folder-closed text-xl w-6 text-center"></i><span>ניהול פרויקטים</span></div></button>
+                
+                <!-- גיבוי ושחזור נתונים ZIP -->
+                <div class="pt-4 border-t border-slate-800 space-y-2">
+                    <div class="text-xs text-slate-400 font-bold px-1">גיבוי ושחזור נתונים (ZIP)</div>
+                    <button onclick="exportAllDataToZIP()" class="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold p-3.5 rounded-xl transition flex items-center justify-between cursor-pointer touch-active shadow">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-file-zipper text-lg"></i>
+                            <span>ייצוא גיבוי (ZIP)</span>
+                        </div>
+                        <i class="fa-solid fa-download text-xs"></i>
+                    </button>
+                    <label class="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-400 font-bold p-3.5 rounded-xl transition flex items-center justify-between cursor-pointer touch-active border border-slate-700">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-file-import text-lg"></i>
+                            <span>ייבוא גיבוי (ZIP)</span>
+                        </div>
+                        <i class="fa-solid fa-upload text-xs"></i>
+                        <input type="file" accept=".zip" onchange="importDataFromZIP(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Hidden Native Camera Input Fallback -->
+    <input type="file" id="nativeCameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleNativeCameraCapture(event)">
+
+    <!-- MODALS -->
+    <!-- Modal 1: Smart File Viewer -->
+    <div id="fileViewerModal" class="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-navy-900 text-white p-4 flex justify-between items-center flex-shrink-0">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-eye text-amber-400 text-lg"></i><span id="viewerModalTitle">צפייה במסמך</span></h3>
+                <button onclick="closeModal('fileViewerModal')" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1 space-y-3 text-sm bg-slate-50" id="viewerModalContent"></div>
+            <div class="bg-white p-4 border-t border-slate-200 flex justify-end gap-2 flex-shrink-0">
+                <button onclick="closeModal('fileViewerModal')" class="px-4 py-2 bg-slate-200 text-slate-800 text-xs font-bold rounded-xl cursor-pointer">סגור</button>
+                <button id="viewerModalDownloadBtn" class="px-5 py-2.5 bg-amber-500 text-slate-950 text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-download"></i> הורד למחשב</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: New Report Selector Modal -->
+    <div id="newReportSelectorModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-navy-900 text-white p-4 flex justify-between items-center flex-shrink-0">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-file-circle-plus text-amber-400 text-lg"></i><span>בחירת סוג דוח לבדיקת חשמל</span></h3>
+                <button onclick="closeModal('newReportSelectorModal')" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-4 bg-slate-100 border-b border-slate-200 flex-shrink-0">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute right-3 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="reportSearchInput" oninput="filterReportsSearch()" placeholder="חפש דוח לפי שם (למשל: מתח גבוה, PV, דירה, הארקה)..." class="w-full pr-9 pl-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-500 transition">
+                </div>
+            </div>
+
+            <div class="p-4 space-y-2 text-xs flex-1 overflow-y-auto" id="reportTemplatesContainer"></div>
+        </div>
+    </div>
+
+    <!-- Modal 3: New Project Modal (With Business Name & Phone) -->
+    <div id="newProjectModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="bg-navy-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-folder-plus text-amber-400"></i>פתיחת פרויקט חדש</h3>
+                <button onclick="closeModal('newProjectModal')" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-5 space-y-3 text-xs">
+                <div><label class="block font-bold text-slate-700 mb-1">איש קשר *</label><input type="text" id="inputProjectContact" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs" placeholder="למשל: ישראל ישראלי"></div>
+                <div><label class="block font-bold text-slate-700 mb-1">שם העסק / חברה *</label><input type="text" id="inputProjectBusinessName" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs" placeholder="למשל: שופרסל בע&quot;מ"></div>
+                <div><label class="block font-bold text-slate-700 mb-1">טלפון</label><input type="tel" id="inputProjectPhone" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs" placeholder="למשל: 052-5360949"></div>
+                <div><label class="block font-bold text-slate-700 mb-1">שם הפרויקט *</label><input type="text" id="inputProjectName" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs" placeholder="למשל: מרכז לוגיסטי - אשקלון"></div>
+            </div>
+            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end gap-2">
+                <button onclick="closeModal('newProjectModal')" class="px-4 py-2 text-slate-600 text-xs font-bold rounded-xl cursor-pointer">ביטול</button>
+                <button onclick="createNewProject()" class="px-5 py-2.5 bg-navy-900 text-white text-xs font-bold rounded-xl cursor-pointer">צור פרויקט</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Camera Live Video Modal -->
+    <div id="liveCameraModal" class="fixed inset-0 bg-navy-950/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="bg-navy-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-camera text-amber-400"></i> צילום מסמך/תכנית במצלמה</h3>
+                <button onclick="closeCameraModal()" class="text-slate-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="relative bg-black h-72 flex items-center justify-center overflow-hidden">
+                <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                <div id="cameraFlash" class="absolute inset-0 bg-white opacity-0 transition-opacity duration-150 pointer-events-none"></div>
+            </div>
+            <div class="p-4 bg-slate-900 flex justify-between items-center gap-2">
+                <button onclick="switchCameraFacing()" class="p-3 bg-slate-800 text-amber-400 rounded-xl hover:bg-slate-700 transition cursor-pointer" title="החלף מצלמה (קדמית/אחורית)"><i class="fa-solid fa-camera-rotate text-lg"></i></button>
+                <button onclick="takeCameraPhoto()" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-extrabold text-sm rounded-xl transition flex items-center gap-2 shadow-lg cursor-pointer touch-active">
+                    <i class="fa-solid fa-circle-dot text-lg animate-pulse"></i> לכוד תמונה
+                </button>
+                <button onclick="closeCameraModal()" class="p-3 bg-slate-800 text-slate-400 rounded-xl hover:bg-slate-700 transition cursor-pointer">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Dynamic Invoice & Receipt Viewer / Editor Modal -->
+    <div id="docOverlayModal" class="fixed inset-0 bg-navy-950/80 backdrop-blur-md z-50 hidden flex-col">
+        <div class="bg-navy-900 text-white p-3 flex justify-between items-center border-b border-slate-700">
+            <div class="flex items-center gap-2"><i class="fa-solid fa-file-signature text-amber-400 text-lg"></i><span id="docOverlayTitle" class="font-bold text-sm text-white">הפקת מסמך</span></div>
+            <button onclick="closeDocModal()" class="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer touch-active shadow"><i class="fa-solid fa-arrow-right"></i><span>חזור לפרויקט</span></button>
+        </div>
+        <div class="flex-1 overflow-hidden relative bg-slate-200">
+            <iframe id="docIframe" dir="rtl" class="w-full h-full border-none"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // CORE DATA & STORAGE
+        let projectsData = [
+            { 
+                id: 'p1', 
+                name: 'מרכז לוגיסטי - שופרסל', 
+                contact: 'ישראל ישראלי', 
+                businessName: 'שופרסל בע"מ',
+                phone: '052-1234567',
+                date: '02/11/2026', 
+                reports: [
+                    { code: '#RPT-2026-001', title: 'דוח לבדיקת לוח מתח גבוה (HV)', date: '02/11/2026', fileSize: '1.2 MB', format: 'PDF', statusMsg: 'נשלח ב-WhatsApp', paymentMsg: 'הופקה חשבונית #1001' }
+                ], 
+                plans: [
+                    { id: 'f1', title: 'תכנית קומת קרקע ראשית', boardName: 'לוח ראשי - קומת קרקע', fileName: 'v1.pdf', fileSize: '2.4 MB', format: 'PDF', date: '02/11/2026' },
+                    { id: 'f2', title: 'כיבוי נגב ראשי - נבטים', boardName: 'כיבוי נגב ראשי', fileName: '141451_260902.pdf', fileSize: '1.8 MB', format: 'PDF', date: '08/11/2026' }
+                ], 
+                permits: [
+                    { name: 'אישור_כיבוי_אש_2026.pdf', fileSize: '950 KB', format: 'PDF', date: '02/11/2026' }
+                ], 
+                extraFiles: [
+                    { name: 'תמונה_של_הלוח.jpg', fileSize: '3.1 MB', format: 'JPG', date: '03/11/2026' }
+                ],
+                invoices: [],
+                receipts: []
+            }
+        ];
+
+        // =========================================================================
+        // 1. INDEXEDDB & PERSISTENT STORAGE MANAGEMENT (שמירה אוטומטית במכשיר)
+        // =========================================================================
+        const DB_NAME = 'ElectroVibeDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'projects';
+
+        function getDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function autoSaveToDevice() {
+            try {
+                const db = await getDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                await store.clear();
+                for (const proj of projectsData) {
+                    await store.put(proj);
+                }
+                console.log('נתוני הפרויקטים נשמרו בהצלחה בזיכרון המקומי (IndexedDB)');
+            } catch (err) {
+                console.error('שגיאה בשמירה ל-IndexedDB:', err);
+            }
+        }
+
+        async function loadFromDevice() {
+            try {
+                const db = await getDB();
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.getAll();
+                return new Promise((resolve) => {
+                    req.onsuccess = () => {
+                        if (req.result && req.result.length > 0) {
+                            projectsData = req.result;
+                            console.log('הנתונים נטענו בהצלחה מזיכרון המכשיר');
+                        }
+                        resolve(projectsData);
+                    };
+                    req.onerror = () => resolve(projectsData);
+                });
+            } catch (err) {
+                console.error('שגיאה בטעינה מ-IndexedDB:', err);
+                return projectsData;
+            }
+        }
+
+        // בקשת אחסון קבוע למניעת מחיקת זיכרון על ידי מערכת ההפעלה
+        if (navigator.storage && navigator.storage.persist) {
+            navigator.storage.persist().then(granted => {
+                if (granted) console.log("אחסון הדפדפן הוגדר כקבוע (Persistent Storage)");
+            });
+        }
+
+        // =========================================================================
+        // 2. ZIP BACKUP EXPORT & IMPORT (ייצוא וייבוא גיבוי קובץ ZIP)
+        // =========================================================================
+        async function exportAllDataToZIP() {
+            try {
+                if (typeof JSZip === 'undefined') {
+                    alert('ספריית JSZip טרם נטענה. אנא ודא חיבור לרשת.');
+                    return;
+                }
+                const zip = new JSZip();
+                const dataJSON = JSON.stringify(projectsData, null, 2);
+                zip.file("electrovibe_data.json", dataJSON);
+
+                const blob = await zip.generateAsync({ type: "blob" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                
+                const today = new Date().toISOString().split('T')[0];
+                link.download = `ElectroVibe_Backup_${today}.zip`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            } catch(err) {
+                console.error("שגיאה ביצירת גיבוי ZIP:", err);
+                alert("אירעה שגיאה בעת ייצוא הגיבוי לקובץ ZIP.");
+            }
+        }
+
+        async function importDataFromZIP(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            try {
+                if (typeof JSZip === 'undefined') {
+                    alert('ספריית JSZip טרם נטענה. אנא ודא חיבור לרשת.');
+                    return;
+                }
+                const zip = await JSZip.loadAsync(file);
+                const jsonFile = zip.file("electrovibe_data.json");
+                
+                if (!jsonFile) {
+                    alert("קובץ ה-ZIP אינו מכיל נתונים תואמים של ElectroVibe.");
+                    return;
+                }
+
+                const content = await jsonFile.async("string");
+                const importedProjects = JSON.parse(content);
+
+                if (Array.isArray(importedProjects)) {
+                    projectsData = importedProjects;
+                    await autoSaveToDevice();
+                    renderApp({ view: 'projects' }, false);
+                    alert("כל הפרויקטים והנתונים שוחזרו בהצלחה מקובץ ה-ZIP!");
+                } else {
+                    alert("פורמט נתוני ה-ZIP אינו תקין.");
+                }
+            } catch (err) {
+                console.error("שגיאה בייבוא ZIP:", err);
+                alert("שגיאה בקריאת קובץ ה-ZIP. נא לוודא קובץ תקין.");
+            }
+            event.target.value = '';
+        }
+
+        const reportTemplatesList = [
+            "דוח לבדיקת לוח מתח גבוה (HV)",
+            "דוח לבדיקת דירה / משרד",
+            "דוח בדיקת מתקן פוטוולטאי (PV)",
+            "דוח בדיקת מתקן אוגר אנרגיה (BESS)",
+            "דוח בדיקת מאסף / לוח חלוקה ראשי",
+            "דוח בדיקת הארקה והשוואת פוטנציאלים",
+            "דוח בדיקת תרמוגרפיה אינפרא-אדום",
+            "דוח בדיקת ציוד רפואי / מתקן רפואי",
+            "דוח בדיקת גנרטור / מערכת חירום",
+            "דוח בדיקת עמדות טעינה לרכב חשמלי (EV)",
+            "דוח בדיקת מתקן ארעי / אתר בנייה",
+            "דוח בדיקת תעשייתית / מתקן ייצור",
+            "דוח בדיקת מערכת גילוי וכיבוי אש",
+            "דוח בדיקה תקופתית לרישיון עסק"
+        ];
+
+        let activeProjectId = 'p1';
+        let activeFolderType = 'reports';
+        let cameraFolderTarget = 'reports';
+        let mediaStream = null;
+        let currentFacingMode = 'environment';
+
+        const sidebarDrawer = document.getElementById('sidebarDrawer');
+        function openSidebar() { sidebarDrawer.classList.remove('translate-x-full'); document.getElementById('sidebarOverlay').classList.remove('hidden'); }
+        function closeSidebar() { sidebarDrawer.classList.add('translate-x-full'); document.getElementById('sidebarOverlay').classList.add('hidden'); }
+
+        // ROUTING & NAVIGATION
+        function navigateToState(state, pushHistory = true) {
+            if (pushHistory) {
+                history.pushState(state, "", "");
+            }
+            renderApp(state);
+        }
+
+        window.addEventListener('popstate', (event) => {
+            const state = event.state || { view: 'projects' };
+            renderApp(state, false);
+        });
+
+        function goBackHistory() {
+            history.back();
+        }
+
+        function renderApp(state) {
+            const proj = projectsData.find(p => p.id === state.projId) || projectsData[0];
+            activeProjectId = proj ? proj.id : 'p1';
+
+            if(proj) {
+                document.getElementById('reportsCountLabel').innerText = `${proj.reports.length} דוחות`; 
+                document.getElementById('plansCountLabel').innerText = `${(proj.plans || []).length} תכניות`; 
+                document.getElementById('permitsCountLabel').innerText = `${(proj.permits || []).length} קבצים`; 
+                document.getElementById('extraCountLabel').innerText = `${(proj.extraFiles || []).length} קבצים`;
+                document.getElementById('invoicesCountLabel').innerText = `${proj.reports.length} שורות דוחות`;
+                document.getElementById('receiptsCountLabel').innerText = `${proj.reports.length} שורות דוחות`;
+            }
+
+            ['projectsView', 'projectDetailView', 'folderContentView'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            if (state.view === 'projects') {
+                document.getElementById('projectsView').classList.remove('hidden');
+                renderProjectsList();
+                updateBreadcrumbs([
+                    { name: 'ראשי' }, 
+                    { name: 'פרויקטים', action: () => navigateToState({view: 'projects'}) }
+                ]);
+            } 
+            else if (state.view === 'projectDetail' && proj) {
+                document.getElementById('projectDetailView').classList.remove('hidden');
+                document.getElementById('currentProjectTitle').innerText = proj.name;
+                updateBreadcrumbs([
+                    { name: 'ראשי' }, 
+                    { name: 'פרויקטים', action: () => navigateToState({view: 'projects'}) },
+                    { name: proj.name, action: () => navigateToState({view: 'projectDetail', projId: proj.id}) }
+                ]);
+            } 
+            else if (state.view === 'folder' && proj) {
+                activeFolderType = state.folderType;
+                document.getElementById('folderContentView').classList.remove('hidden');
+                
+                ['paneReports', 'panePlans', 'panePermits', 'paneExtra', 'paneInvoices', 'paneReceipts'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.classList.add('hidden');
+                });
+                
+                let folderNameHeb = '';
+                let iconClass = '';
+                if (activeFolderType === 'reports') {
+                    folderNameHeb = 'דוחות בדיקה';
+                    iconClass = 'fa-solid fa-file-contract text-amber-400';
+                    document.getElementById('paneReports').classList.remove('hidden');
+                    renderReportsFolders(proj);
+                } else if (activeFolderType === 'plans') {
+                    folderNameHeb = 'תכניות חשמל';
+                    iconClass = 'fa-solid fa-diagram-project text-blue-400';
+                    document.getElementById('panePlans').classList.remove('hidden');
+                    renderPlansFolders(proj);
+                } else if (activeFolderType === 'permits') {
+                    folderNameHeb = 'היתרים';
+                    iconClass = 'fa-solid fa-file-shield text-emerald-400';
+                    document.getElementById('panePermits').classList.remove('hidden');
+                    renderPermitsList(proj);
+                } else if (activeFolderType === 'extra') {
+                    folderNameHeb = 'קבצים נוספים';
+                    iconClass = 'fa-solid fa-folder-plus text-purple-400';
+                    document.getElementById('paneExtra').classList.remove('hidden');
+                    renderExtraFilesList(proj);
+                } else if (activeFolderType === 'invoices') {
+                    folderNameHeb = 'חשבוניות מס';
+                    iconClass = 'fa-solid fa-file-invoice-dollar text-amber-500';
+                    document.getElementById('paneInvoices').classList.remove('hidden');
+                    renderInvoicesFolders(proj);
+                } else if (activeFolderType === 'receipts') {
+                    folderNameHeb = 'קבלות';
+                    iconClass = 'fa-solid fa-file-invoice text-teal-500';
+                    document.getElementById('paneReceipts').classList.remove('hidden');
+                    renderReceiptsFolders(proj);
+                }
+
+                document.getElementById('activeFolderTitle').innerText = folderNameHeb;
+                document.getElementById('activeFolderIcon').className = iconClass + ' text-3xl';
+
+                updateBreadcrumbs([
+                    { name: 'ראשי' }, 
+                    { name: 'פרויקטים', action: () => navigateToState({view: 'projects'}) },
+                    { name: proj.name, action: () => navigateToState({view: 'projectDetail', projId: proj.id}) },
+                    { name: folderNameHeb, action: () => navigateToState({view: 'folder', projId: proj.id, folderType: activeFolderType}) }
+                ]);
+            }
+        }
+
+        function updateBreadcrumbs(pathArray) {
+            const container = document.getElementById('breadcrumbsContainer');
+            if(!container) return;
+            let html = '';
+            pathArray.forEach((item, idx) => {
+                const isLast = idx === pathArray.length - 1;
+                if (idx > 0) {
+                    html += `<i class="fa-solid fa-chevron-left text-xs text-slate-400 mx-1"></i>`;
+                }
+                if (isLast) {
+                    html += `<span class="text-amber-900 bg-amber-50 px-2.5 py-0.5 rounded-lg border font-bold">${item.name}</span>`;
+                } else {
+                    html += `<span onclick="item.action && item.action()" class="cursor-pointer text-slate-600 hover:text-amber-600 font-semibold transition">${item.name}</span>`;
+                }
+            });
+            container.innerHTML = html;
+        }
+
+        function renderProjectsList() {
+            const pc = document.getElementById('projectsCount'); if(pc) pc.innerText = `${projectsData.length} פרויקטים`;
+            const pg = document.getElementById('projectsGrid'); if(!pg) return;
+            if(projectsData.length === 0) {
+                pg.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed">אין פרויקטים במערכת. קליק על "פרויקט חדש" לפתיחת פרויקט.</div>`;
+                return;
+            }
+            pg.innerHTML = projectsData.map(p => `
+                <div onclick="navigateToState({view: 'projectDetail', projId: '${p.id}'})" class="bg-slate-50 border border-slate-200 hover:border-amber-400 active:bg-amber-50/30 p-4 rounded-2xl cursor-pointer transition shadow-sm space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-folder-open text-2xl text-amber-500"></i>
+                            <div>
+                                <h3 class="font-bold text-slate-900 text-base">${p.name}</h3>
+                                <p class="text-xs text-slate-500">עסק: ${p.businessName || p.name} | איש קשר: ${p.contact || 'לא מצוין'}</p>
+                            </div>
+                        </div>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">${(p.reports || []).length} דוחות</span>
+                    </div>
+                </div>`).join('');
+        }
+
+        // RENDER INNER FILES & DOCUMENTS
+        function renderReportsFolders(proj) {
+            const grid = document.getElementById('reportsFolderGrid');
+            if(!proj.reports || proj.reports.length === 0) { 
+                grid.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed">אין דוחות במערכת. העלה דוח חדש או צלם במצלמה.</div>`; 
+                return; 
+            }
+            grid.innerHTML = proj.reports.map((r, idx) => `
+                <div class="bg-white border-2 border-slate-200 hover:border-amber-300 rounded-2xl p-3 shadow-sm reports-grid transition cursor-pointer" onclick="openFileViewer('${r.title}', 'קוד: ${r.code} | תאריך: ${r.date}', 'PDF')">
+                    <div class="text-right flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf text-red-600 text-lg flex-shrink-0"></i>
+                        <span class="font-mono font-bold text-slate-900 truncate">${r.code}</span>
+                    </div>
+                    <div class="text-right truncate">
+                        <h4 class="font-bold text-sm md:text-base text-slate-900 truncate">${r.title}</h4>
+                    </div>
+                    <div class="text-right text-xs text-slate-600 truncate">${proj.name}</div>
+                    <div class="text-center text-xs text-slate-500 font-mono">${r.date}</div>
+                    <div class="text-center text-xs">
+                        <span class="bg-slate-100 text-slate-700 border px-2 py-0.5 rounded-full font-bold inline-block">${r.statusMsg || 'טיוטה'}</span>
+                    </div>
+                    <div class="text-center text-xs">
+                        <span class="bg-slate-100 text-slate-700 border px-2 py-0.5 rounded-full font-bold inline-block">${r.paymentMsg || 'טרם שולם'}</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="actionDownloadPDF('${r.title}', '${r.code}')" title="פתיחה ללא הורדה כ-PDF" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-red-600 cursor-pointer touch-active"><i class="fa-solid fa-file-pdf text-sm"></i></button>
+                        <button onclick="actionWhatsApp('${r.title} (${r.code})', '${proj.name}')" title="שלח בוואטסאפ" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 cursor-pointer touch-active"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="actionEmail('${r.title} (${r.code})', '${proj.name}')" title="שלח במייל" class="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-600 cursor-pointer touch-active"><i class="fa-solid fa-envelope text-sm"></i></button>
+                        <button onclick="deleteItemConfirm('reports', ${idx}, '${r.title}')" title="מחק דוח" class="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 cursor-pointer touch-active"><i class="fa-solid fa-trash text-sm"></i></button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function renderPlansFolders(proj) { 
+            const grid = document.getElementById('plansFolderGrid'); 
+            if(!proj.plans || proj.plans.length === 0) { 
+                grid.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed">אין תכניות חשמל. העלה תכנית חדשה או צלם במצלמה.</div>`; 
+                return; 
+            } 
+            grid.innerHTML = proj.plans.map((f, idx) => `
+                <div class="bg-white border-2 border-slate-200 hover:border-blue-300 rounded-2xl p-3 shadow-sm plans-grid transition cursor-pointer" onclick="openFileViewer('${f.title}', 'קובץ: ${f.fileName} | פורמט: ${f.format} | גודל: ${f.fileSize}', '${f.format}')">
+                    <div class="text-right truncate flex items-center gap-2.5">
+                        <i class="fa-solid fa-file-pdf text-blue-600 text-xl flex-shrink-0"></i>
+                        <div class="truncate">
+                            <h4 class="font-bold text-sm md:text-base text-slate-900 truncate">${f.title}</h4>
+                            <p class="text-xs text-slate-500 truncate"><span class="font-semibold text-slate-700">קובץ:</span> ${f.fileName}</p>
+                        </div>
+                    </div>
+                    <div class="text-center text-xs font-mono uppercase text-slate-700 font-bold">${f.format || 'PDF'}</div>
+                    <div class="text-center text-xs text-slate-600 font-mono">${f.fileSize || '1.5 MB'}</div>
+                    <div class="text-center text-xs text-slate-500 font-mono">${f.date}</div>
+                    <div class="text-right text-xs text-slate-700 truncate">
+                        <span class="font-bold">לוח:</span> ${f.boardName}
+                    </div>
+                    <div class="flex items-center justify-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="actionDownloadPDF('${f.title}', '${f.boardName}')" title="פתיחה ללא הורדה כ-PDF" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-red-600 cursor-pointer touch-active"><i class="fa-solid fa-file-pdf text-sm"></i></button>
+                        <button onclick="actionWhatsApp('${f.title} (לוח: ${f.boardName})', '${proj.name}')" title="שלח בוואטסאפ" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 cursor-pointer touch-active"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="actionEmail('${f.title} (לוח: ${f.boardName})', '${proj.name}')" title="שלח במייל" class="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-600 cursor-pointer touch-active"><i class="fa-solid fa-envelope text-sm"></i></button>
+                        <button onclick="deleteItemConfirm('plans', ${idx}, '${f.title}')" title="מחק תכנית" class="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 cursor-pointer touch-active"><i class="fa-solid fa-trash text-sm"></i></button>
+                    </div>
+                </div>`).join(''); 
+        }
+
+        function renderPermitsList(proj) { 
+            const list = document.getElementById('permitsList'); 
+            if(!proj.permits || proj.permits.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed">אין היתרים או אישורים. העלה היתר או צלם במצלמה.</div>`; return; } 
+            list.innerHTML = proj.permits.map((item, idx) => {
+                const fName = typeof item === 'string' ? item : item.name;
+                const fSize = item.fileSize || '950 KB';
+                const fFormat = item.format || 'PDF';
+                const fDate = item.date || '02/11/2026';
+                return `
+                <div class="bg-white border-2 border-slate-200 hover:border-emerald-300 p-3 rounded-2xl text-xs shadow-sm cursor-pointer hover:bg-slate-50 transition permits-grid" onclick="openFileViewer('${fName}', 'תאריך: ${fDate} | גודל: ${fSize}', '${fFormat}')">
+                    <div class="text-right flex items-center gap-2 truncate">
+                        <i class="fa-solid fa-file-shield text-emerald-600 text-lg flex-shrink-0"></i>
+                        <span class="font-bold text-slate-900 text-sm truncate">${fName}</span>
+                    </div>
+                    <div class="text-center font-bold uppercase text-slate-700 font-mono">${fFormat}</div>
+                    <div class="text-center text-slate-600 font-mono">${fSize}</div>
+                    <div class="text-center text-slate-500 font-mono">${fDate}</div>
+                    <div class="flex items-center justify-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="actionDownloadPDF('${fName}', 'היתר/אישור')" title="פתיחה ללא הורדה כ-PDF" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-red-600 cursor-pointer touch-active"><i class="fa-solid fa-file-pdf text-sm"></i></button>
+                        <button onclick="actionWhatsApp('${fName}', '${proj.name}')" title="שלח בוואטסאפ" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 cursor-pointer touch-active"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="actionEmail('${fName}', '${proj.name}')" title="שלח במייל" class="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-600 cursor-pointer touch-active"><i class="fa-solid fa-envelope text-sm"></i></button>
+                        <button onclick="deleteItemConfirm('permits', ${idx}, '${fName}')" title="מחק היתר" class="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 cursor-pointer touch-active"><i class="fa-solid fa-trash text-sm"></i></button>
+                    </div>
+                </div>`;
+            }).join(''); 
+        }
+
+        function renderExtraFilesList(proj) { 
+            const list = document.getElementById('extraFilesList'); 
+            if(!proj.extraFiles || proj.extraFiles.length === 0) { list.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed">אין קבצים נוספים. העלה קובץ או צלם במצלמה.</div>`; return; } 
+            list.innerHTML = proj.extraFiles.map((f, idx) => `
+                <div class="bg-white border-2 border-slate-200 hover:border-purple-300 p-3 rounded-2xl text-xs shadow-sm cursor-pointer hover:bg-slate-50 transition extra-grid" onclick="openFileViewer('${f.name}', 'תאריך: ${f.date} | גודל: ${f.fileSize || '1.1 MB'}', '${f.format || 'JPG'}')">
+                    <div class="text-right flex items-center gap-2 truncate">
+                        <i class="fa-solid fa-file-lines text-purple-600 text-lg flex-shrink-0"></i>
+                        <span class="font-bold text-slate-900 text-sm truncate">${f.name}</span>
+                    </div>
+                    <div class="text-center font-bold uppercase text-slate-700 font-mono">${f.format || 'JPG'}</div>
+                    <div class="text-center text-slate-600 font-mono">${f.fileSize || '1.1 MB'}</div>
+                    <div class="text-center text-slate-500 font-mono">${f.date}</div>
+                    <div class="flex items-center justify-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="actionDownloadPDF('${f.name}', 'קובץ נוסף')" title="פתיחה ללא הורדה כ-PDF" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-red-600 cursor-pointer touch-active"><i class="fa-solid fa-file-pdf text-sm"></i></button>
+                        <button onclick="actionWhatsApp('${f.name}', '${proj.name}')" title="שלח בוואטסאפ" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 cursor-pointer touch-active"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="actionEmail('${f.name}', '${proj.name}')" title="שלח במייל" class="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-600 cursor-pointer touch-active"><i class="fa-solid fa-envelope text-sm"></i></button>
+                        <button onclick="deleteItemConfirm('extra', ${idx}, '${f.name}')" title="מחק קובץ" class="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-600 cursor-pointer touch-active"><i class="fa-solid fa-trash text-sm"></i></button>
+                    </div>
+                </div>`).join(''); 
+        }
+
+        // RENDER INVOICES & RECEIPTS FOLDERS
+        function renderInvoicesFolders(proj) {
+            const grid = document.getElementById('invoicesFolderGrid');
+            const reportsCount = proj.reports ? proj.reports.length : 0;
+            grid.innerHTML = `
+                <div class="bg-white border-2 border-amber-200 hover:border-amber-400 p-3.5 rounded-2xl text-xs shadow-sm cursor-pointer hover:bg-amber-50/30 transition permits-grid" onclick="openProjectDocModal('invoice')">
+                    <div class="text-right flex items-center gap-2 truncate">
+                        <i class="fa-solid fa-file-invoice-dollar text-amber-600 text-xl flex-shrink-0"></i>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm truncate">חשבונית מס - ${proj.businessName || proj.name}</h4>
+                            <p class="text-[11px] text-slate-500">איש קשר: ${proj.contact || 'לא מצוין'} | טלפון: ${proj.phone || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="text-center font-bold text-slate-700 font-mono">PDF / HTML</div>
+                    <div class="text-center text-slate-600 font-bold">${reportsCount} שורות דוחות</div>
+                    <div class="text-center text-slate-500 font-mono">${proj.date}</div>
+                    <div class="flex items-center justify-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="openProjectDocModal('invoice')" title="פתיחה ועריכת חשבונית מס" class="p-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl font-bold flex items-center gap-1 cursor-pointer touch-active">
+                            <i class="fa-solid fa-pen-to-square"></i><span>צפה / ערוך</span>
+                        </button>
+                        <button onclick="actionWhatsApp('חשבונית מס - ${proj.name}', '${proj.name}')" title="שלח בוואטסאפ" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 cursor-pointer touch-active"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="actionEmail('חשבונית מס - ${proj.name}', '${proj.name}')" title="שלח במייל" class="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-600 cursor-pointer touch-active"><i class="fa-solid fa-envelope text-sm"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReceiptsFolders(proj) {
+            const grid = document.getElementById('receiptsFolderGrid');
+            const reportsCount = proj.reports ? proj.reports.length : 0;
+            grid.innerHTML = `
+                <div class="bg-white border-2 border-teal-200 hover:border-teal-400 p-3.5 rounded-2xl text-xs shadow-sm cursor-pointer hover:bg-teal-50/30 transition permits-grid" onclick="openProjectDocModal('receipt')">
+                    <div class="text-right flex items-center gap-2 truncate">
+                        <i class="fa-solid fa-file-invoice text-teal-600 text-xl flex-shrink-0"></i>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm truncate">קבלה - ${proj.businessName || proj.name}</h4>
+                            <p class="text-[11px] text-slate-500">איש קשר: ${proj.contact || 'לא מצוין'} | טלפון: ${proj.phone || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="text-center font-bold text-slate-700 font-mono">PDF / HTML</div>
+                    <div class="text-center text-slate-600 font-bold">${reportsCount} שורות דוחות</div>
+                    <div class="text-center text-slate-500 font-mono">${proj.date}</div>
+                    <div class="flex items-center justify-center gap-1" onclick="event.stopPropagation()">
+                        <button onclick="openProjectDocModal('receipt')" title="פתיחה ועריכת קבלה" class="p-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold flex items-center gap-1 cursor-pointer touch-active">
+                            <i class="fa-solid fa-pen-to-square"></i><span>צפה / ערוך</span>
+                        </button>
+                        <button onclick="actionWhatsApp('קבלה - ${proj.name}', '${proj.name}')" title="שלח בוואטסאפ" class="p-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 cursor-pointer touch-active"><i class="fa-brands fa-whatsapp text-sm"></i></button>
+                        <button onclick="actionEmail('קבלה - ${proj.name}', '${proj.name}')" title="שלח במייל" class="p-2 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-600 cursor-pointer touch-active"><i class="fa-solid fa-envelope text-sm"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // OPEN DYNAMIC INVOICE/RECEIPT MODAL PRE-FILLED FROM REPORTS & CONTACT
+        function openProjectDocModal(type) {
+            const proj = projectsData.find(p => p.id === activeProjectId);
+            if(!proj) return;
+
+            let reportRows = (proj.reports || []).map(r => ({
+                desc: r.title,
+                qty: 1,
+                price: r.price || 0,
+                sum: r.price || 0
+            }));
+
+            if(reportRows.length === 0) {
+                reportRows = [{ desc: `בדיקות הנדסיות - ${proj.name}`, qty: 1, price: 0, sum: 0 }];
+            }
+
+            const docData = {
+                clientName: proj.businessName || proj.name,
+                clientPhone: proj.phone || '',
+                clientID: '',
+                clientEmail: '',
+                clientAddress: `פרויקט: ${proj.name} (איש קשר: ${proj.contact || ''})`,
+                rows: reportRows
+            };
+
+            const modal = document.getElementById('docOverlayModal'); 
+            const iframe = document.getElementById('docIframe'); 
+            const title = document.getElementById('docOverlayTitle');
+            const tplId = type === 'invoice' ? 'invoiceTemplate' : 'receiptTemplate'; 
+            
+            title.innerText = type === 'invoice' ? `חשבונית מס - ${proj.name}` : `קבלה - ${proj.name}`;
+            iframe.srcdoc = document.getElementById(tplId).innerHTML;
+            
+            iframe.onload = function() {
+                if (iframe.contentWindow && iframe.contentWindow.loadDataIntoForm) {
+                    iframe.contentWindow.loadDataIntoForm(docData);
+                }
+            };
+            modal.classList.remove('hidden'); 
+            modal.classList.add('flex'); 
+        }
+
+        function closeDocModal() { 
+            document.getElementById('docOverlayModal').classList.add('hidden'); 
+            document.getElementById('docOverlayModal').classList.remove('flex'); 
+            document.getElementById('docIframe').srcdoc = ''; 
+        }
+
+        window.saveDocumentRecord = function(docType, data) {
+            alert(`המסמך (${docType === 'invoice' ? 'חשבונית מס' : 'קבלה'}) נשמר בהצלחה לפרויקט!`);
+            autoSaveToDevice();
+            closeDocModal();
+        }
+
+        // DELETE CONFIRMATION
+        async function deleteItemConfirm(type, idx, itemName) {
+            const proj = projectsData.find(p => p.id === activeProjectId);
+            if(!proj) return;
+            if(confirm(`האם למחוק את הקובץ "${itemName}"?`)) {
+                if(type === 'reports') proj.reports.splice(idx, 1);
+                if(type === 'plans') proj.plans.splice(idx, 1);
+                if(type === 'permits') proj.permits.splice(idx, 1);
+                if(type === 'extra') proj.extraFiles.splice(idx, 1);
+                await autoSaveToDevice();
+                renderApp({ view: 'folder', projId: activeProjectId, folderType: activeFolderType });
+            }
+        }
+
+        // CAMERA LOGIC
+        async function triggerCamera(folderType) {
+            cameraFolderTarget = folderType;
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: { ideal: currentFacingMode } } 
+                    });
+                    const video = document.getElementById('cameraVideo');
+                    video.srcObject = mediaStream;
+                    document.getElementById('liveCameraModal').classList.remove('hidden');
+                } catch (e1) {
+                    try {
+                        mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        const video = document.getElementById('cameraVideo');
+                        video.srcObject = mediaStream;
+                        document.getElementById('liveCameraModal').classList.remove('hidden');
+                    } catch (e2) {
+                        fallbackNativeCamera();
+                    }
+                }
+            } else {
+                fallbackNativeCamera();
+            }
+        }
+
+        function fallbackNativeCamera() {
+            const input = document.getElementById('nativeCameraInput');
+            input.value = '';
+            input.click();
+        }
+
+        function switchCameraFacing() {
+            if(mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            triggerCamera(cameraFolderTarget);
+        }
+
+        async function takeCameraPhoto() {
+            const video = document.getElementById('cameraVideo');
+            const flash = document.getElementById('cameraFlash');
+            flash.style.opacity = '1';
+            setTimeout(() => { flash.style.opacity = '0'; }, 150);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const today = new Date().toLocaleDateString('he-IL');
+            const proj = projectsData.find(p => p.id === activeProjectId);
+
+            if(proj) {
+                const photoName = `צילום_שטח_${Date.now()}.jpg`;
+                if(cameraFolderTarget === 'reports') {
+                    proj.reports.unshift({ code: `#RPT-CAM-${Math.floor(100+Math.random()*900)}`, title: photoName, date: today, fileSize: '1.8 MB', format: 'JPG', statusMsg: 'צולם במצלמה', paymentMsg: 'טיוטה' });
+                } else if(cameraFolderTarget === 'plans') {
+                    proj.plans.unshift({ id: `f_${Date.now()}`, title: photoName, boardName: 'לוח כללי', fileName: photoName, fileSize: '2.1 MB', format: 'JPG', date: today });
+                } else if(cameraFolderTarget === 'permits') {
+                    proj.permits.unshift({ name: photoName, fileSize: '1.5 MB', format: 'JPG', date: today });
+                } else if(cameraFolderTarget === 'extra') {
+                    if(!proj.extraFiles) proj.extraFiles = [];
+                    proj.extraFiles.unshift({ name: photoName, fileSize: '1.9 MB', format: 'JPG', date: today });
+                }
+                await autoSaveToDevice();
+                renderApp({ view: 'folder', projId: activeProjectId, folderType: cameraFolderTarget });
+            }
+            closeCameraModal();
+        }
+
+        function closeCameraModal() {
+            if(mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            document.getElementById('liveCameraModal').classList.add('hidden');
+        }
+
+        function handleNativeCameraCapture(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            processUploadedFileObject(file, cameraFolderTarget);
+            event.target.value = '';
+        }
+
+        function uploadFileToActiveFolder(event, folderType) {
+            const file = event.target.files[0];
+            if(!file) return;
+            processUploadedFileObject(file, folderType);
+            event.target.value = '';
+        }
+
+        async function processUploadedFileObject(file, folderType) {
+            const proj = projectsData.find(p => p.id === activeProjectId);
+            if(!proj) return;
+
+            const fSize = (file.size / (1024*1024)).toFixed(1) + ' MB';
+            const fExt = file.name.split('.').pop().toUpperCase();
+            const today = new Date().toLocaleDateString('he-IL');
+
+            if(folderType === 'reports') {
+                proj.reports.unshift({
+                    code: '#RPT-' + Math.floor(1000 + Math.random() * 9000),
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    date: today,
+                    fileSize: fSize,
+                    format: fExt,
+                    statusMsg: 'הועלה בהצלחה',
+                    paymentMsg: 'טרם שולם'
+                });
+            } else if(folderType === 'plans') {
+                if(!proj.plans) proj.plans = [];
+                proj.plans.unshift({
+                    id: 'plan_' + Date.now(),
+                    title: file.name.replace(/\.[^/.]+$/, ""),
+                    boardName: 'לוח כללי',
+                    fileName: file.name,
+                    fileSize: fSize,
+                    format: fExt,
+                    date: today
+                });
+            } else if(folderType === 'permits') {
+                if(!proj.permits) proj.permits = [];
+                proj.permits.unshift({ name: file.name, fileSize: fSize, format: fExt, date: today });
+            } else if(folderType === 'extra') {
+                if(!proj.extraFiles) proj.extraFiles = [];
+                proj.extraFiles.unshift({ name: file.name, fileSize: fSize, format: fExt, date: today });
+            }
+
+            await autoSaveToDevice();
+            renderApp({ view: 'folder', projId: activeProjectId, folderType: folderType });
+        }
+
+        function openNewReportSelectorModal() {
+            renderReportTemplatesList(reportTemplatesList);
+            document.getElementById('reportSearchInput').value = '';
+            document.getElementById('newReportSelectorModal').classList.remove('hidden');
+        }
+
+        function renderReportTemplatesList(list) {
+            const container = document.getElementById('reportTemplatesContainer');
+            if (list.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs font-semibold">לא נמצאו דוחות התואמים לחיפוש שלך.</div>`;
+                return;
+            }
+            container.innerHTML = list.map(title => `
+                <button onclick="createNewReport('${title}')" class="w-full text-right p-3.5 rounded-2xl border border-slate-200 active:bg-amber-50 hover:border-amber-400 flex justify-between items-center font-bold text-slate-800 text-sm transition cursor-pointer">
+                    <span>${title}</span>
+                    <i class="fa-solid fa-chevron-left text-xs text-slate-400"></i>
+                </button>
+            `).join('');
+        }
+
+        function filterReportsSearch() {
+            const query = document.getElementById('reportSearchInput').value.trim().toLowerCase();
+            const filtered = reportTemplatesList.filter(t => t.toLowerCase().includes(query));
+            renderReportTemplatesList(filtered);
+        }
+
+        async function createNewReport(title) { 
+            const proj = projectsData.find(p => p.id === activeProjectId); 
+            const newReport = { 
+                code: '#RPT-' + Math.floor(1000 + Math.random() * 9000), 
+                title: title, 
+                date: new Date().toLocaleDateString('he-IL'), 
+                fileSize: '1.4 MB',
+                format: 'PDF',
+                statusMsg: 'טיוטה חדשה', 
+                paymentMsg: 'טרם שולם' 
+            };
+            proj.reports.unshift(newReport); 
+            closeModal('newReportSelectorModal'); 
+            await autoSaveToDevice();
+            renderApp({ view: 'folder', projId: activeProjectId, folderType: 'reports' });
+        }
+
+        function openFileViewer(title, metaInfo, fileType) {
+            document.getElementById('viewerModalTitle').innerText = `צפייה במסמך: ${title}`;
+            const contentDiv = document.getElementById('viewerModalContent');
+            contentDiv.innerHTML = `
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-file-pdf text-4xl text-red-600"></i>
+                        <div>
+                            <h4 class="font-bold text-base text-slate-900">${title}</h4>
+                            <p class="text-xs text-slate-500 font-mono">${metaInfo}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-8 bg-slate-900 rounded-2xl text-center text-slate-200 flex flex-col items-center justify-center space-y-3">
+                    <i class="fa-solid fa-file-signature text-5xl text-amber-400"></i>
+                    <p class="text-sm font-semibold">תצוגה מקדימה של המסמך פעילה - ElectroVibe</p>
+                    <p class="text-xs text-slate-400">הקובץ מוצג במלואו במסך המגע או במחשב ללא צורך בהורדה מחדש.</p>
+                </div>
+            `;
+            document.getElementById('viewerModalDownloadBtn').onclick = () => actionDownloadPDF(title, metaInfo);
+            document.getElementById('fileViewerModal').classList.remove('hidden');
+        }
+
+        function actionWhatsApp(docTitle, projName) {
+            const text = `שלום, מצורף מסמך מקצועי "${docTitle}" עבור פרויקט: ${projName} - ElectroVibe (מהנדס חשמל ובודק סוג 3).`;
+            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        function actionEmail(docTitle, projName) {
+            const subject = encodeURIComponent(`ElectroVibe - מסמך: ${docTitle}`);
+            const body = encodeURIComponent(`שלום רב,
+
+מצורפים פרטי המסמך "${docTitle}" בפרויקט "${projName}".
+
+בברכה,
+דור דוברי - מהנדס חשמל ובודק סוג 3`);
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        function actionDownloadPDF(docTitle, codeOrInfo) {
+            openFileViewer(docTitle, codeOrInfo, 'PDF');
+        }
+
+        function openNewProjectModal() { document.getElementById('newProjectModal').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        async function createNewProject() {
+            const contact = document.getElementById('inputProjectContact').value.trim();
+            const businessName = document.getElementById('inputProjectBusinessName').value.trim();
+            const phone = document.getElementById('inputProjectPhone').value.trim();
+            const name = document.getElementById('inputProjectName').value.trim();
+
+            if(!name) { alert('נא להזין שם פרויקט'); return; }
+            
+            const newProj = {
+                id: 'p_' + Date.now(),
+                name: name,
+                contact: contact || 'לא מצוין',
+                businessName: businessName || name,
+                phone: phone || '',
+                date: new Date().toLocaleDateString('he-IL'),
+                reports: [],
+                plans: [],
+                permits: [],
+                extraFiles: [],
+                invoices: [],
+                receipts: []
+            };
+            projectsData.unshift(newProj);
+            closeModal('newProjectModal');
+            
+            document.getElementById('inputProjectName').value = '';
+            document.getElementById('inputProjectContact').value = '';
+            document.getElementById('inputProjectBusinessName').value = '';
+            document.getElementById('inputProjectPhone').value = '';
+
+            await autoSaveToDevice();
+            navigateToState({ view: 'projectDetail', projId: newProj.id });
+        }
+
+        // טעינה ראשונית מזיכרון המכשיר (IndexedDB) בעת פתיחת האתר
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadFromDevice();
+            navigateToState({ view: 'projects' }, false);
+        });
+    </script>
+
+    <!-- TEMPLATE 1: חשבונית מס -->
+    <template id="invoiceTemplate">
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>חשבונית מס</title>
+    <style>
+        @page { size: A4; margin: 8mm; } html, body { direction: rtl; text-align: right; } body { font-family: 'David', serif; font-size: 10pt; background-color: #f1f5f9; margin: 0; padding: 5px; color: #000; }
+        .page { width: 210mm; min-height: 281mm; padding: 10mm; margin: auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+        .bsd { font-size: 9.5pt; font-weight: bold; margin-bottom: 2px; text-align: right; } .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; }
+        .title { text-align: center; font-size: 14pt; font-weight: bold; margin: 3px 0; } .client-section { border: 1px solid #000; padding: 3px 6px; margin-bottom: 4px; background-color: #fafafa; }
+        .client-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; gap: 15px; } .client-cell { display: flex; align-items: center; gap: 5px; flex: 1; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 3px; } th, td { border: 1px solid #000; padding: 1px 3px; text-align: center; font-size: 9.5pt; vertical-align: middle; }
+        th { background-color: #f8fafc; font-weight: bold; } input, textarea, select { font-family: 'David', serif; font-size: 9.5pt; border: 1px solid #cbd5e1; padding: 1px 2px; box-sizing: border-box; background: #fff; text-align: center; }
+        .borderless-input { border: none; background: transparent; outline: none; } .compact-input { width: auto; min-width: 25px; } .compact-price { width: auto; min-width: 45px; }
+        textarea { resize: none; min-height: 18px; height: 18px; line-height: 1.1; overflow-y: hidden; text-align: center; } .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 2px; margin-bottom: 4px; }
+        .summary-table { width: 250px; border-collapse: collapse; } .payment-box { border: 1px solid #000; padding: 4px 6px; margin-top: 22px; margin-bottom: 4px; background-color: #fafafa; font-size: 9pt; }
+        .btn { background-color: #0f172a; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 9pt; }
+        @media print { body { background: none; padding: 0; } .page { box-shadow: none; margin: 0; width: 100%; min-height: 100vh; } .no-print { display: none !important; } input, textarea, select { border: none !important; background: transparent !important; resize: none; appearance: none; } }
+    </style>
+</head>
+<body>
+    <div style="max-width: 210mm; margin: auto; text-align: right; margin-bottom: 4px; display:flex; justify-content:flex-start;" class="no-print"><button class="btn" onclick="saveAndPrint()" style="background:#10b981; font-weight:bold;">🖨️ שמור חשבונית מס</button></div>
+    <div class="page">
+        <div>
+            <div class="bsd">בס"ד</div>
+            <div class="header">
+                <div style="text-align: right;"><strong style="font-size: 12pt;">ElectroVibe - דור דוברי </strong><br>ח.פ: 201385564<br>אשקלון | טלפון: 0525360949</div>
+                <div style="text-align: left; display: flex; align-items: center; gap: 10px;"><span><strong>תאריך:</strong> <input type="date" id="invDate" class="borderless-input" style="width: 105px;"></span><span><strong>שעה:</strong> <input type="text" id="invTime" class="borderless-input" style="width: 45px;"></span></div>
+            </div>
+            <div class="title">חשבונית מס</div>
+            <div class="client-section">
+                <div class="client-row"><div class="client-cell"><strong>לכבוד:</strong><input type="text" id="docClientName" style="width: 100%;"></div><div class="client-cell"><strong>טלפון:</strong><input type="text" id="docClientPhone" style="width: 100%;"></div></div>
+                <div class="client-row"><div class="client-cell"><strong>ח.פ/ת.ז:</strong><input type="text" id="docClientID" style="width: 100%;"></div><div class="client-cell"><strong>אימייל:</strong><input type="email" id="docClientEmail" style="width: 100%;"></div></div>
+                <div class="client-row"><div class="client-cell"><strong>כתובת/פרויקט:</strong><input type="text" id="docClientAddress" style="width: 100%;"></div><div class="client-cell"><strong>מס' חשבונית:</strong><input type="text" style="width: 100%;"></div></div>
+            </div>
+            <button class="btn no-print" onclick="addRow()" style="margin-bottom: 2px; font-size: 8pt; padding: 1px 4px;">+ הוסף שורה</button>
+            <table>
+                <thead><tr><th style="width: 30px;">מס'</th><th style="text-align: center;">תאור העבודה (שורת דוח בדיקה)</th><th style="width: 55px;">כמות</th><th style="width: 75px;">מחיר יחידה</th><th style="width: 75px;">סכום</th></tr></thead>
+                <tbody id="invTableBody"><tr><td class="row-num">1</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;"></textarea></td><td><input type="number" value="1" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="0" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="0.00" readonly></td></tr></tbody>
+            </table>
+            <div class="summary-wrapper">
+                <table class="summary-table">
+                    <tr><td style="text-align: right;">סה"כ ללא מע"מ:</td><td style="text-align: center; width: 90px;"><span id="subTotal">0.00</span> ₪</td></tr>
+                    <tr><td style="text-align: right;">(<input type="number" id="vatRateInput" value="18" style="width: 35px; text-align: center; padding: 0;" oninput="calcTotals()">%) מע"מ</td><td style="text-align: center;"><span id="vatTotal">0.00</span> ₪</td></tr>
+                    <tr style="font-weight: bold;"><td style="text-align: right;">סה"כ כולל מע"מ:</td><td style="text-align: center;"><span id="grandTotal">0.00</span> ₪</td></tr>
+                </table>
+            </div>
+            <div class="payment-box"><div><strong>אופן התשלום:</strong> <select><option>העברה בנקאית</option><option selected>העברה בביט / פייבוקס</option><option>מזומן</option><option>אשראי</option><option>המחאה</option></select></div><div style="font-size: 8.5pt; margin-top: 2px;"><strong>פרטי תשלום:</strong> בנק: לאומי | סניף: 926 | מס' חשבון: 4445431</div></div>
+        </div>
+        <div>
+            <div class="footer-bottom" style="text-align:center; font-weight:bold; font-size:9pt; margin-top:10px;">ElectroVibe - מסמך מופק דיגיטלית</div>
+        </div>
+    </div>
+    <script>
+        window.addEventListener('load', () => {
+            document.getElementById('invDate').value = new Date().toISOString().split('T')[0]; document.getElementById('invTime').value = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+        });
+        
+        window.loadDataIntoForm = function(data) {
+            document.getElementById('docClientName').value = data.clientName || ''; document.getElementById('docClientPhone').value = data.clientPhone || '';
+            document.getElementById('docClientID').value = data.clientID || ''; document.getElementById('docClientEmail').value = data.clientEmail || ''; document.getElementById('docClientAddress').value = data.clientAddress || '';
+            if(data.rows && data.rows.length > 0) {
+                const tbody = document.getElementById('invTableBody'); tbody.innerHTML = '';
+                data.rows.forEach((r, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="row-num">${idx+1}</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;">${r.desc}</textarea></td><td><input type="number" value="${r.qty}" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="${r.price}" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="${r.sum}" readonly></td>`;
+                    tbody.appendChild(tr);
+                });
+                calcTotals();
+            }
+        };
+
+        function getFullData() {
+            const rows = [];
+            document.querySelectorAll('#invTableBody tr').forEach(tr => {
+                rows.push({
+                    desc: tr.cells[1].querySelector('textarea').value, qty: tr.cells[2].querySelector('input').value,
+                    price: tr.cells[3].querySelector('input').value, sum: tr.cells[4].querySelector('input').value
+                });
+            });
+            return {
+                clientName: document.getElementById('docClientName').value, clientPhone: document.getElementById('docClientPhone').value,
+                clientID: document.getElementById('docClientID').value, clientEmail: document.getElementById('docClientEmail').value,
+                clientAddress: document.getElementById('docClientAddress').value, total: document.getElementById('grandTotal').innerText, rows: rows
+            };
+        }
+
+        function saveAndPrint() { const data = getFullData(); if(!data.clientName) { alert('יש להזין את שם הלקוח!'); return; } if (window.parent && window.parent.saveDocumentRecord) { window.parent.saveDocumentRecord('invoice', data); } window.print(); }
+        function autoResize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }
+        function addRow() { const tbody = document.getElementById('invTableBody'); const tr = document.createElement('tr'); tr.innerHTML = `<td class="row-num">${tbody.rows.length + 1}</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;"></textarea></td><td><input type="number" value="1" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="0" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="0.00" readonly></td>`; tbody.appendChild(tr); }
+        function calcRow(input) { const row = input.closest('tr'); if (row) { const qty = parseFloat(row.cells[2].querySelector('input').value) || 0; const price = parseFloat(row.cells[3].querySelector('input').value) || 0; row.cells[4].querySelector('input').value = (qty * price).toFixed(2); } calcTotals(); }
+        function calcTotals() { let sub = 0; document.querySelectorAll('.row-sum').forEach(el => sub += parseFloat(el.value) || 0); const vat = sub * ((parseFloat(document.getElementById('vatRateInput').value) || 0) / 100); document.getElementById('subTotal').innerText = sub.toFixed(2); document.getElementById('vatTotal').innerText = vat.toFixed(2); document.getElementById('grandTotal').innerText = (sub + vat).toFixed(2); }
+    </script>
+</body>
+</html>
+    </template>
+
+    <!-- TEMPLATE 2: קבלה -->
+    <template id="receiptTemplate">
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>קבלה</title>
+    <style>
+        @page { size: A4; margin: 8mm; } html, body { direction: rtl; text-align: right; } body { font-family: 'David', serif; font-size: 10pt; background-color: #f1f5f9; margin: 0; padding: 5px; color: #000; }
+        .page { width: 210mm; min-height: 281mm; padding: 10mm; margin: auto; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+        .bsd { font-size: 9.5pt; font-weight: bold; margin-bottom: 2px; text-align: right; } .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 3px; margin-bottom: 5px; }
+        .title { text-align: center; font-size: 14pt; font-weight: bold; margin: 3px 0; } .client-section { border: 1px solid #000; padding: 3px 6px; margin-bottom: 4px; background-color: #fafafa; }
+        .client-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; gap: 15px; } .client-cell { display: flex; align-items: center; gap: 5px; flex: 1; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 3px; } th, td { border: 1px solid #000; padding: 1px 3px; text-align: center; font-size: 9.5pt; vertical-align: middle; }
+        th { background-color: #f8fafc; font-weight: bold; } input, textarea, select { font-family: 'David', serif; font-size: 9.5pt; border: 1px solid #cbd5e1; padding: 1px 2px; box-sizing: border-box; background: #fff; text-align: center; }
+        .borderless-input { border: none; background: transparent; outline: none; } .compact-input { width: auto; min-width: 25px; } .compact-price { width: auto; min-width: 45px; }
+        textarea { resize: none; min-height: 18px; height: 18px; line-height: 1.1; overflow-y: hidden; text-align: center; } .summary-wrapper { display: flex; justify-content: flex-end; margin-top: 2px; margin-bottom: 4px; }
+        .summary-table { width: 250px; border-collapse: collapse; } .payment-box { border: 1px solid #000; padding: 4px 6px; margin-top: 22px; margin-bottom: 4px; background-color: #fafafa; font-size: 9pt; }
+        .btn { background-color: #0f172a; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 9pt; }
+        @media print { body { background: none; padding: 0; } .page { box-shadow: none; margin: 0; width: 100%; min-height: 100vh; } .no-print { display: none !important; } input, textarea, select { border: none !important; background: transparent !important; resize: none; appearance: none; } }
+    </style>
+</head>
+<body>
+    <div style="max-width: 210mm; margin: auto; text-align: right; margin-bottom: 4px; display:flex; justify-content:flex-start;" class="no-print"><button class="btn" onclick="saveAndPrint()" style="background:#10b981; font-weight:bold;">🖨️ שמור קבלה</button></div>
+    <div class="page">
+        <div>
+            <div class="bsd">בס"ד</div>
+            <div class="header">
+                <div style="text-align: right;"><strong style="font-size: 12pt;">ElectroVibe - דור דוברי </strong><br>ח.פ: 201385564<br>אשקלון | טלפון: 0525360949</div>
+                <div style="text-align: left; display: flex; align-items: center; gap: 10px;"><span><strong>תאריך:</strong> <input type="date" id="recDate" class="borderless-input" style="width: 105px;"></span><span><strong>שעה:</strong> <input type="text" id="recTime" class="borderless-input" style="width: 45px;"></span></div>
+            </div>
+            <div class="title">קבלה</div>
+            <div class="client-section">
+                <div class="client-row"><div class="client-cell"><strong>לכבוד:</strong><input type="text" id="docClientName" style="width: 100%;"></div><div class="client-cell"><strong>טלפון:</strong><input type="text" id="docClientPhone" style="width: 100%;"></div></div>
+                <div class="client-row"><div class="client-cell"><strong>ח.פ/ת.ז:</strong><input type="text" id="docClientID" style="width: 100%;"></div><div class="client-cell"><strong>אימייל:</strong><input type="email" id="docClientEmail" style="width: 100%;"></div></div>
+                <div class="client-row"><div class="client-cell"><strong>כתובת/פרויקט:</strong><input type="text" id="docClientAddress" style="width: 100%;"></div><div class="client-cell"><strong>מס' קבלה:</strong><input type="text" style="width: 100%;"></div></div>
+            </div>
+            <button class="btn no-print" onclick="addRow()" style="margin-bottom: 2px; font-size: 8pt; padding: 1px 4px;">+ הוסף שורה</button>
+            <table>
+                <thead><tr><th style="width: 30px;">מס'</th><th style="text-align: center;">תאור העבודה (עבור מה שולם)</th><th style="width: 55px;">כמות</th><th style="width: 75px;">מחיר יחידה</th><th style="width: 75px;">סכום</th></tr></thead>
+                <tbody id="recTableBody"><tr><td class="row-num">1</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;"></textarea></td><td><input type="number" value="1" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="0" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="0.00" readonly></td></tr></tbody>
+            </table>
+            <div class="summary-wrapper">
+                <table class="summary-table">
+                    <tr><td style="text-align: right;">סה"כ ללא מע"מ:</td><td style="text-align: center; width: 90px;"><span id="subTotal">0.00</span> ₪</td></tr>
+                    <tr><td style="text-align: right;">(<input type="number" id="vatRateInput" value="18" style="width: 35px; text-align: center; padding: 0;" oninput="calcTotals()">%) מע"מ</td><td style="text-align: center;"><span id="vatTotal">0.00</span> ₪</td></tr>
+                    <tr style="font-weight: bold;"><td style="text-align: right;">סה"כ שולם (כולל מע"מ):</td><td style="text-align: center;"><span id="grandTotal">0.00</span> ₪</td></tr>
+                </table>
+            </div>
+            <div class="payment-box"><div><strong>אופן התשלום:</strong> <select><option>העברה בנקאית</option><option selected>העברה בביט / פייבוקס</option><option>מזומן</option><option>אשראי</option><option>המחאה</option></select></div><div style="font-size: 8.5pt; margin-top: 2px;"><strong>פרטי תשלום:</strong> בנק: לאומי | סניף: 926 | מס' חשבון: 4445431</div></div>
+        </div>
+        <div>
+            <div class="footer-bottom" style="text-align:center; font-weight:bold; font-size:9pt; margin-top:10px;">ElectroVibe - מסמך מופק דיגיטלית</div>
+        </div>
+    </div>
+    <script>
+        window.addEventListener('load', () => {
+            document.getElementById('recDate').value = new Date().toISOString().split('T')[0]; document.getElementById('recTime').value = new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+        });
+        
+        window.loadDataIntoForm = function(data) {
+            document.getElementById('docClientName').value = data.clientName || ''; document.getElementById('docClientPhone').value = data.clientPhone || '';
+            document.getElementById('docClientID').value = data.clientID || ''; document.getElementById('docClientEmail').value = data.clientEmail || ''; document.getElementById('docClientAddress').value = data.clientAddress || '';
+            if(data.rows && data.rows.length > 0) {
+                const tbody = document.getElementById('recTableBody'); tbody.innerHTML = '';
+                data.rows.forEach((r, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td class="row-num">${idx+1}</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;">${r.desc}</textarea></td><td><input type="number" value="${r.qty}" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="${r.price}" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="${r.sum}" readonly></td>`;
+                    tbody.appendChild(tr);
+                });
+                calcTotals();
+            }
+        };
+
+        function getFullData() {
+            const rows = [];
+            document.querySelectorAll('#recTableBody tr').forEach(tr => {
+                rows.push({
+                    desc: tr.cells[1].querySelector('textarea').value, qty: tr.cells[2].querySelector('input').value,
+                    price: tr.cells[3].querySelector('input').value, sum: tr.cells[4].querySelector('input').value
+                });
+            });
+            return {
+                clientName: document.getElementById('docClientName').value, clientPhone: document.getElementById('docClientPhone').value,
+                clientID: document.getElementById('docClientID').value, clientEmail: document.getElementById('docClientEmail').value,
+                clientAddress: document.getElementById('docClientAddress').value, total: document.getElementById('grandTotal').innerText, rows: rows
+            };
+        }
+
+        function saveAndPrint() { const data = getFullData(); if(!data.clientName) { alert('יש להזין את שם הלקוח!'); return; } if (window.parent && window.parent.saveDocumentRecord) { window.parent.saveDocumentRecord('receipt', data); } window.print(); }
+        function autoResize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }
+        function addRow() { const tbody = document.getElementById('recTableBody'); const tr = document.createElement('tr'); tr.innerHTML = `<td class="row-num">${tbody.rows.length + 1}</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;"></textarea></td><td><input type="number" value="1" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="0" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="${r.sum}" readonly></td>`; tbody.appendChild(tr); }
+        function calcRow(input) { const row = input.closest('tr'); if (row) { const qty = parseFloat(row.cells[2].querySelector('input').value) || 0; const price = parseFloat(row.cells[3].querySelector('input').value) || 0; row.cells[4].querySelector('input').value = (qty * price).toFixed(2); } calcTotals(); }
+        function calcTotals() { let sub = 0; document.querySelectorAll('.row-sum').forEach(el => sub += parseFloat(el.value) || 0); const vat = sub * ((parseFloat(document.getElementById('vatRateInput').value) || 0) / 100); document.getElementById('subTotal').innerText = sub.toFixed(2); document.getElementById('vatTotal').innerText = vat.toFixed(2); document.getElementById('grandTotal').innerText = (sub + vat).toFixed(2); }
+    </script>
+</body>
+</html>
+    </template>
+</body>
+</html>
