@@ -12,8 +12,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <!-- JSZip library for local ZIP Backup Export/Import -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -22,10 +20,12 @@
     </script>
     <style>
         * { touch-action: manipulation; -webkit-tap-highlight-color: rgba(245, 158, 11, 0.15); }
-        body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; user-select: none; -webkit-user-select: none; overscroll-behavior-y: none; direction: rtl; text-align: right; }
+        body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; user-select: none; -webkit-user-select: none; overscroll-behavior-y: none; direction: rtl; text-align: right; height: 100dvh; }
         ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .touch-active:active { transform: scale(0.98); opacity: 0.9; } .scrollbar-hide::-webkit-scrollbar { display: none; }
         
+        main { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)) !important; }
+
         /* Grid templates for consistent headers and rows */
         .reports-grid { display: grid; grid-template-columns: 130px 1fr 120px 90px 110px 90px 140px; gap: 8px; align-items: center; direction: rtl; text-align: right; }
         .plans-grid { display: grid; grid-template-columns: 1fr 80px 80px 95px 120px 140px; gap: 8px; align-items: center; direction: rtl; text-align: right; }
@@ -289,26 +289,6 @@
             </div>
             <div class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
                 <button onclick="closeSidebar(); navigateToState({view: 'projects'});" class="w-full bg-slate-800 p-4 rounded-xl border border-amber-500/40 flex items-center justify-between text-amber-400 font-bold transition"><div class="flex items-center gap-3"><i class="fa-solid fa-folder-closed text-xl w-6 text-center"></i><span>ניהול פרויקטים</span></div></button>
-                
-                <!-- גיבוי ושחזור נתונים ZIP -->
-                <div class="pt-4 border-t border-slate-800 space-y-2">
-                    <div class="text-xs text-slate-400 font-bold px-1">גיבוי ושחזור נתונים (ZIP)</div>
-                    <button onclick="exportAllDataToZIP()" class="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-slate-950 font-bold p-3.5 rounded-xl transition flex items-center justify-between cursor-pointer touch-active shadow">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-file-zipper text-lg"></i>
-                            <span>ייצוא גיבוי (ZIP)</span>
-                        </div>
-                        <i class="fa-solid fa-download text-xs"></i>
-                    </button>
-                    <label class="w-full bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-400 font-bold p-3.5 rounded-xl transition flex items-center justify-between cursor-pointer touch-active border border-slate-700">
-                        <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-file-import text-lg"></i>
-                            <span>ייבוא גיבוי (ZIP)</span>
-                        </div>
-                        <i class="fa-solid fa-upload text-xs"></i>
-                        <input type="file" accept=".zip" onchange="importDataFromZIP(event)" class="hidden">
-                    </label>
-                </div>
             </div>
         </aside>
     </div>
@@ -431,136 +411,6 @@
             }
         ];
 
-        // =========================================================================
-        // 1. INDEXEDDB & PERSISTENT STORAGE MANAGEMENT (שמירה אוטומטית במכשיר)
-        // =========================================================================
-        const DB_NAME = 'ElectroVibeDB';
-        const DB_VERSION = 1;
-        const STORE_NAME = 'projects';
-
-        function getDB() {
-            return new Promise((resolve, reject) => {
-                const req = indexedDB.open(DB_NAME, DB_VERSION);
-                req.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                    }
-                };
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        async function autoSaveToDevice() {
-            try {
-                const db = await getDB();
-                const tx = db.transaction(STORE_NAME, 'readwrite');
-                const store = tx.objectStore(STORE_NAME);
-                await store.clear();
-                for (const proj of projectsData) {
-                    await store.put(proj);
-                }
-                console.log('נתוני הפרויקטים נשמרו בהצלחה בזיכרון המקומי (IndexedDB)');
-            } catch (err) {
-                console.error('שגיאה בשמירה ל-IndexedDB:', err);
-            }
-        }
-
-        async function loadFromDevice() {
-            try {
-                const db = await getDB();
-                const tx = db.transaction(STORE_NAME, 'readonly');
-                const store = tx.objectStore(STORE_NAME);
-                const req = store.getAll();
-                return new Promise((resolve) => {
-                    req.onsuccess = () => {
-                        if (req.result && req.result.length > 0) {
-                            projectsData = req.result;
-                            console.log('הנתונים נטענו בהצלחה מזיכרון המכשיר');
-                        }
-                        resolve(projectsData);
-                    };
-                    req.onerror = () => resolve(projectsData);
-                });
-            } catch (err) {
-                console.error('שגיאה בטעינה מ-IndexedDB:', err);
-                return projectsData;
-            }
-        }
-
-        // בקשת אחסון קבוע למניעת מחיקת זיכרון על ידי מערכת ההפעלה
-        if (navigator.storage && navigator.storage.persist) {
-            navigator.storage.persist().then(granted => {
-                if (granted) console.log("אחסון הדפדפן הוגדר כקבוע (Persistent Storage)");
-            });
-        }
-
-        // =========================================================================
-        // 2. ZIP BACKUP EXPORT & IMPORT (ייצוא וייבוא גיבוי קובץ ZIP)
-        // =========================================================================
-        async function exportAllDataToZIP() {
-            try {
-                if (typeof JSZip === 'undefined') {
-                    alert('ספריית JSZip טרם נטענה. אנא ודא חיבור לרשת.');
-                    return;
-                }
-                const zip = new JSZip();
-                const dataJSON = JSON.stringify(projectsData, null, 2);
-                zip.file("electrovibe_data.json", dataJSON);
-
-                const blob = await zip.generateAsync({ type: "blob" });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                
-                const today = new Date().toISOString().split('T')[0];
-                link.download = `ElectroVibe_Backup_${today}.zip`;
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(link.href);
-            } catch(err) {
-                console.error("שגיאה ביצירת גיבוי ZIP:", err);
-                alert("אירעה שגיאה בעת ייצוא הגיבוי לקובץ ZIP.");
-            }
-        }
-
-        async function importDataFromZIP(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            try {
-                if (typeof JSZip === 'undefined') {
-                    alert('ספריית JSZip טרם נטענה. אנא ודא חיבור לרשת.');
-                    return;
-                }
-                const zip = await JSZip.loadAsync(file);
-                const jsonFile = zip.file("electrovibe_data.json");
-                
-                if (!jsonFile) {
-                    alert("קובץ ה-ZIP אינו מכיל נתונים תואמים של ElectroVibe.");
-                    return;
-                }
-
-                const content = await jsonFile.async("string");
-                const importedProjects = JSON.parse(content);
-
-                if (Array.isArray(importedProjects)) {
-                    projectsData = importedProjects;
-                    await autoSaveToDevice();
-                    renderApp({ view: 'projects' }, false);
-                    alert("כל הפרויקטים והנתונים שוחזרו בהצלחה מקובץ ה-ZIP!");
-                } else {
-                    alert("פורמט נתוני ה-ZIP אינו תקין.");
-                }
-            } catch (err) {
-                console.error("שגיאה בייבוא ZIP:", err);
-                alert("שגיאה בקריאת קובץ ה-ZIP. נא לוודא קובץ תקין.");
-            }
-            event.target.value = '';
-        }
-
         const reportTemplatesList = [
             "דוח לבדיקת לוח מתח גבוה (HV)",
             "דוח לבדיקת דירה / משרד",
@@ -607,16 +457,14 @@
 
         function renderApp(state) {
             const proj = projectsData.find(p => p.id === state.projId) || projectsData[0];
-            activeProjectId = proj ? proj.id : 'p1';
+            activeProjectId = proj.id;
 
-            if(proj) {
-                document.getElementById('reportsCountLabel').innerText = `${proj.reports.length} דוחות`; 
-                document.getElementById('plansCountLabel').innerText = `${(proj.plans || []).length} תכניות`; 
-                document.getElementById('permitsCountLabel').innerText = `${(proj.permits || []).length} קבצים`; 
-                document.getElementById('extraCountLabel').innerText = `${(proj.extraFiles || []).length} קבצים`;
-                document.getElementById('invoicesCountLabel').innerText = `${proj.reports.length} שורות דוחות`;
-                document.getElementById('receiptsCountLabel').innerText = `${proj.reports.length} שורות דוחות`;
-            }
+            document.getElementById('reportsCountLabel').innerText = `${proj.reports.length} דוחות`; 
+            document.getElementById('plansCountLabel').innerText = `${(proj.plans || []).length} תכניות`; 
+            document.getElementById('permitsCountLabel').innerText = `${(proj.permits || []).length} קבצים`; 
+            document.getElementById('extraCountLabel').innerText = `${(proj.extraFiles || []).length} קבצים`;
+            document.getElementById('invoicesCountLabel').innerText = `${proj.reports.length} שורות דוחות`;
+            document.getElementById('receiptsCountLabel').innerText = `${proj.reports.length} שורות דוחות`;
 
             ['projectsView', 'projectDetailView', 'folderContentView'].forEach(id => {
                 document.getElementById(id).classList.add('hidden');
@@ -630,7 +478,7 @@
                     { name: 'פרויקטים', action: () => navigateToState({view: 'projects'}) }
                 ]);
             } 
-            else if (state.view === 'projectDetail' && proj) {
+            else if (state.view === 'projectDetail') {
                 document.getElementById('projectDetailView').classList.remove('hidden');
                 document.getElementById('currentProjectTitle').innerText = proj.name;
                 updateBreadcrumbs([
@@ -639,7 +487,7 @@
                     { name: proj.name, action: () => navigateToState({view: 'projectDetail', projId: proj.id}) }
                 ]);
             } 
-            else if (state.view === 'folder' && proj) {
+            else if (state.view === 'folder') {
                 activeFolderType = state.folderType;
                 document.getElementById('folderContentView').classList.remove('hidden');
                 
@@ -715,10 +563,6 @@
         function renderProjectsList() {
             const pc = document.getElementById('projectsCount'); if(pc) pc.innerText = `${projectsData.length} פרויקטים`;
             const pg = document.getElementById('projectsGrid'); if(!pg) return;
-            if(projectsData.length === 0) {
-                pg.innerHTML = `<div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-2xl border border-dashed">אין פרויקטים במערכת. קליק על "פרויקט חדש" לפתיחת פרויקט.</div>`;
-                return;
-            }
             pg.innerHTML = projectsData.map(p => `
                 <div onclick="navigateToState({view: 'projectDetail', projId: '${p.id}'})" class="bg-slate-50 border border-slate-200 hover:border-amber-400 active:bg-amber-50/30 p-4 rounded-2xl cursor-pointer transition shadow-sm space-y-3">
                     <div class="flex items-center justify-between">
@@ -729,7 +573,7 @@
                                 <p class="text-xs text-slate-500">עסק: ${p.businessName || p.name} | איש קשר: ${p.contact || 'לא מצוין'}</p>
                             </div>
                         </div>
-                        <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">${(p.reports || []).length} דוחות</span>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">${p.reports.length} דוחות</span>
                     </div>
                 </div>`).join('');
         }
@@ -948,12 +792,11 @@
 
         window.saveDocumentRecord = function(docType, data) {
             alert(`המסמך (${docType === 'invoice' ? 'חשבונית מס' : 'קבלה'}) נשמר בהצלחה לפרויקט!`);
-            autoSaveToDevice();
             closeDocModal();
         }
 
         // DELETE CONFIRMATION
-        async function deleteItemConfirm(type, idx, itemName) {
+        function deleteItemConfirm(type, idx, itemName) {
             const proj = projectsData.find(p => p.id === activeProjectId);
             if(!proj) return;
             if(confirm(`האם למחוק את הקובץ "${itemName}"?`)) {
@@ -961,7 +804,6 @@
                 if(type === 'plans') proj.plans.splice(idx, 1);
                 if(type === 'permits') proj.permits.splice(idx, 1);
                 if(type === 'extra') proj.extraFiles.splice(idx, 1);
-                await autoSaveToDevice();
                 renderApp({ view: 'folder', projId: activeProjectId, folderType: activeFolderType });
             }
         }
@@ -1006,7 +848,7 @@
             triggerCamera(cameraFolderTarget);
         }
 
-        async function takeCameraPhoto() {
+        function takeCameraPhoto() {
             const video = document.getElementById('cameraVideo');
             const flash = document.getElementById('cameraFlash');
             flash.style.opacity = '1';
@@ -1033,7 +875,6 @@
                     if(!proj.extraFiles) proj.extraFiles = [];
                     proj.extraFiles.unshift({ name: photoName, fileSize: '1.9 MB', format: 'JPG', date: today });
                 }
-                await autoSaveToDevice();
                 renderApp({ view: 'folder', projId: activeProjectId, folderType: cameraFolderTarget });
             }
             closeCameraModal();
@@ -1061,7 +902,7 @@
             event.target.value = '';
         }
 
-        async function processUploadedFileObject(file, folderType) {
+        function processUploadedFileObject(file, folderType) {
             const proj = projectsData.find(p => p.id === activeProjectId);
             if(!proj) return;
 
@@ -1098,7 +939,6 @@
                 proj.extraFiles.unshift({ name: file.name, fileSize: fSize, format: fExt, date: today });
             }
 
-            await autoSaveToDevice();
             renderApp({ view: 'folder', projId: activeProjectId, folderType: folderType });
         }
 
@@ -1128,7 +968,7 @@
             renderReportTemplatesList(filtered);
         }
 
-        async function createNewReport(title) { 
+        function createNewReport(title) { 
             const proj = projectsData.find(p => p.id === activeProjectId); 
             const newReport = { 
                 code: '#RPT-' + Math.floor(1000 + Math.random() * 9000), 
@@ -1141,7 +981,6 @@
             };
             proj.reports.unshift(newReport); 
             closeModal('newReportSelectorModal'); 
-            await autoSaveToDevice();
             renderApp({ view: 'folder', projId: activeProjectId, folderType: 'reports' });
         }
 
@@ -1176,12 +1015,7 @@
 
         function actionEmail(docTitle, projName) {
             const subject = encodeURIComponent(`ElectroVibe - מסמך: ${docTitle}`);
-            const body = encodeURIComponent(`שלום רב,
-
-מצורפים פרטי המסמך "${docTitle}" בפרויקט "${projName}".
-
-בברכה,
-דור דוברי - מהנדס חשמל ובודק סוג 3`);
+            const body = encodeURIComponent(`שלום רב,\n\nמצורפים פרטי המסמך "${docTitle}" בפרויקט "${projName}".\n\nבברכה,\nדור דוברי - מהנדס חשמל ובודק סוג 3`);
             window.location.href = `mailto:?subject=${subject}&body=${body}`;
         }
 
@@ -1192,7 +1026,7 @@
         function openNewProjectModal() { document.getElementById('newProjectModal').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-        async function createNewProject() {
+        function createNewProject() {
             const contact = document.getElementById('inputProjectContact').value.trim();
             const businessName = document.getElementById('inputProjectBusinessName').value.trim();
             const phone = document.getElementById('inputProjectPhone').value.trim();
@@ -1222,15 +1056,10 @@
             document.getElementById('inputProjectBusinessName').value = '';
             document.getElementById('inputProjectPhone').value = '';
 
-            await autoSaveToDevice();
             navigateToState({ view: 'projectDetail', projId: newProj.id });
         }
 
-        // טעינה ראשונית מזיכרון המכשיר (IndexedDB) בעת פתיחת האתר
-        window.addEventListener('DOMContentLoaded', async () => {
-            await loadFromDevice();
-            navigateToState({ view: 'projects' }, false);
-        });
+        navigateToState({ view: 'projects' }, false);
     </script>
 
     <!-- TEMPLATE 1: חשבונית מס -->
@@ -1423,7 +1252,7 @@
 
         function saveAndPrint() { const data = getFullData(); if(!data.clientName) { alert('יש להזין את שם הלקוח!'); return; } if (window.parent && window.parent.saveDocumentRecord) { window.parent.saveDocumentRecord('receipt', data); } window.print(); }
         function autoResize(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; }
-        function addRow() { const tbody = document.getElementById('recTableBody'); const tr = document.createElement('tr'); tr.innerHTML = `<td class="row-num">${tbody.rows.length + 1}</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;"></textarea></td><td><input type="number" value="1" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="0" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="${r.sum}" readonly></td>`; tbody.appendChild(tr); }
+        function addRow() { const tbody = document.getElementById('recTableBody'); const tr = document.createElement('tr'); tr.innerHTML = `<td class="row-num">${tbody.rows.length + 1}</td><td><textarea oninput="autoResize(this); calcTotals();" style="width: 100%;"></textarea></td><td><input type="number" value="1" oninput="calcRow(this)" class="compact-input"></td><td><input type="number" value="0" step="0.01" oninput="calcRow(this)" class="compact-price"></td><td><input type="text" class="row-sum compact-price borderless-input" value="0.00" readonly></td>`; tbody.appendChild(tr); }
         function calcRow(input) { const row = input.closest('tr'); if (row) { const qty = parseFloat(row.cells[2].querySelector('input').value) || 0; const price = parseFloat(row.cells[3].querySelector('input').value) || 0; row.cells[4].querySelector('input').value = (qty * price).toFixed(2); } calcTotals(); }
         function calcTotals() { let sub = 0; document.querySelectorAll('.row-sum').forEach(el => sub += parseFloat(el.value) || 0); const vat = sub * ((parseFloat(document.getElementById('vatRateInput').value) || 0) / 100); document.getElementById('subTotal').innerText = sub.toFixed(2); document.getElementById('vatTotal').innerText = vat.toFixed(2); document.getElementById('grandTotal').innerText = (sub + vat).toFixed(2); }
     </script>
